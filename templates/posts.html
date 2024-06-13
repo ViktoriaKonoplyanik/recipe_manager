@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список Рецептов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container py-3">
+    <header>
+        <div class="d-flex flex-column flex-md-row align-items-center pb-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
+                <span class="fs-4">Сделай мир вкуснее</span>
+            </a>
+            <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
+                <a class="me-3 py-2 text-dark text-decoration-none" href="/">Главная</a>
+                <a class="me-3 py-2 text-dark text-decoration-none" href="/search_results">Поиск</a>
+                <a class="me-3 py-2 text-dark text-decoration-none" href="/posts">Добавленные рецепты</a>
+                {% if 'username' in session %}
+                    <span class="me-3 py-2 text-dark">Вы вошли как {{ session['username'] }}</span>
+                    <a class="me-3 py-2 text-dark text-decoration-none" href="{{ url_for('logout') }}">Выйти</a>
+                {% else %}
+                    <a class="me-3 py-2 text-dark text-decoration-none" href="{{ url_for('login') }}">Войти</a>
+                    <a class="me-3 py-2 text-dark text-decoration-none" href="{{ url_for('register') }}">Регистрация</a>
+                {% endif %}
+            </nav>
+        </div>
+        <h1>Список рецептов</h1>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <ul>
+        {% for recipe in recipes %}
+            <li>
+                <h2><a href="#">{{ recipe.title }}</a></h2>
+                <p>Категория: {{ recipe.category }}</p>
+                <p>Время приготовления: {{ recipe.prep_time }}</p>
+                {% if recipe.image %}
+                    <img src="{{ url_for('static', filename='images/' + recipe.image) }}" alt="{{ recipe.title }}">
+                {% endif %}
+                <p>{{ recipe.description }}</p>
+                <h3>Ингредиенты:</h3>
+                <p>{{ recipe.ingredients }}</p>
+                <h3>Инструкция:</h3>
+                <p>{{ recipe.instructions }}</p>
+                <h3>Комментарии:</h3>
+                <ul>
+                    {% for comment in recipe.comments %}
+                        <li>
+                            <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                            <p><small>{{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                            {% if 'user_id' in session and comment.user_id == session['user_id'] %}
+                                <form action="{{ url_for('delete_comment', id=comment.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger">Удалить комментарий</button>
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {% if 'user_id' in session %}
+                    <form action="{{ url_for('add_comment', recipe_id=recipe.id) }}" method="POST">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Ваш комментарий:</label>
+                            <textarea class="form-control" id="content" name="content" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить комментарий</button>
+                    </form>
+                {% else %}
+                    <p>Пожалуйста, <a href="{{ url_for('login') }}">войдите</a> или <a href="{{ url_for('register') }}">зарегистрируйтесь</a>, чтобы оставлять комментарии.</p>
+                {% endif %}
+                {% if 'user_id' in session and recipe.user_id == session['user_id'] %}
+                    <form action="{{ url_for('delete_recipe', id=recipe.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Удалить рецепт</button>
+                    </form>
+                    <a href="{{ url_for('edit_recipe', id=recipe.id) }}" class="btn btn-warning">Редактировать</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>
