@@ -53,7 +53,6 @@ class Comment(db.Model):
         return '<Recipes %r>' % self.id
 
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     categories = ['Завтрак', 'Обед', 'Ужин', 'Десерт', 'Напитки']
@@ -63,7 +62,6 @@ def index():
             flash('Необходимо зарегистрироваться, чтобы добавить рецепт.', 'danger')
             return redirect(url_for('login'))
 
-    if request.method == 'POST':
         title = request.form['title']
         category = request.form['category']
         description = request.form['description']
@@ -72,11 +70,12 @@ def index():
         instructions = request.form['instructions']
         image = request.files['image']
 
-
-        image.save('static/images/' + image.filename)
-        new_recipe = Recipes(title=title, category=category, description=description,
-                             prep_time=prep_time, ingredients=ingredients,
-                             instructions=instructions, image=image.filename, user_id=session['user_id'])
+        image.save(os.path.join('static/images/', secure_filename(image.filename)))
+        new_recipe = Recipes(
+            title=title, category=category, description=description,
+            prep_time=prep_time, ingredients=ingredients,
+            instructions=instructions, image=image.filename, user_id=session['user_id']
+        )
         db.session.add(new_recipe)
         db.session.commit()
         flash('Рецепт добавлен успешно!', 'success')
